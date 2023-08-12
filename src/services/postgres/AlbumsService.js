@@ -70,6 +70,11 @@ class AlbumsService extends BaseService {
       throw new NotFoundError('Gagal menghapus album, id tidak ditemukan');
     }
   }
+  async getSongsByAlbum(id){
+    const query = {
+      
+    }
+  }
 }
 
 module.exports = AlbumsService;
