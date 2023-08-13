@@ -70,10 +70,38 @@ class AlbumsService extends BaseService {
       throw new NotFoundError('Gagal menghapus album, id tidak ditemukan');
     }
   }
-  async getSongsByAlbum(id){
+
+  async getSongsByAlbumId(id) {
     const query = {
-      
+      text: `
+        SELECT
+        a.id as id,
+        a.name as name,
+        a.year as year,
+          array(
+          SELECT
+            json_build_object(
+              'id',s.id,
+              'title',s.title,
+              'performer',s.performer
+            )
+          FROM
+            songs s
+              WHERE
+                  s.album_id=a.id
+        ) as songs
+      FROM
+        ${this._table} a
+      WHERE
+        a.id=$1       
+      `,
+      values: [id],
+    };
+    const result = await this._pool.query(query);
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal mengambil album, id tidak ditemukan');
     }
+    return result.rows[0];
   }
 }
 

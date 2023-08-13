@@ -7,6 +7,7 @@ const SongsService = require('./services/postgres/SongsService');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
 const SongsValidator = require('./validator/songs');
+const ClientError = require('./exceptions/ClientError');
 
 const init = async () => {
   const albumsService = new AlbumsService();
@@ -19,6 +20,29 @@ const init = async () => {
         origin: ['*'],
       },
     },
+  });
+  server.ext('onPreResponse', (request, h) => {
+    const { response } = request;
+    if (response instanceof Error) {
+      if (response instanceof ClientError) {
+        const newResponse = h.response({
+          status: 'fail',
+          message: response.message,
+        });
+        newResponse.code(response.statusCode);
+        return newResponse;
+      }
+      if (!response.isServer) {
+        return h.continue;
+      }
+      const newResponse = h.response({
+        status: 'error',
+        message: 'Terjadi kegagalan pada server',
+      });
+      newResponse.code(500);
+      return newResponse;
+    }
+    return h.continue;
   });
   await server.register(
     [{

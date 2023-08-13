@@ -98,6 +98,25 @@ class SongsService extends BaseService {
       throw new NotFoundError('Gagal menghapus Song, id tidak ditemukan');
     }
   }
+
+  async searchSongs(search) {
+    const cols = Object.keys(search);
+    const values = Object.values(search);
+    let querySearch = '';
+    cols.forEach((element, index) => {
+      values[index] = `%${values[index]}%`;
+      querySearch += `${element} ILIKE $${index + 1} `;
+      if (cols.length > 1 && (index !== cols.length - 1)) {
+        querySearch += 'AND ';
+      }
+    });
+    const query = {
+      text: `SELECT id,title,performer FROM songs WHERE ${querySearch}`,
+      values,
+    };
+    const result = await this._pool.query(query);
+    return result.rows.map(mapSongsModel);
+  }
 }
 
 module.exports = SongsService;

@@ -1,7 +1,3 @@
-const ClientError = require('../../exceptions/ClientError');
-const InvariantError = require('../../exceptions/InvariantError');
-const NotFoundError = require('../../exceptions/NotFoundError');
-
 class AlbumsHandler {
   constructor(service, validator) {
     this._service = service;
@@ -15,155 +11,60 @@ class AlbumsHandler {
   }
 
   async postAlbumHandler(request, h) {
-    try {
-      this._validator.validateAlbumPayload(request.payload);
-      const { name, year } = request.payload;
+    this._validator.validateAlbumPayload(request.payload);
+    const { name, year } = request.payload;
 
-      const albumId = await this._service.addAlbum({ name, year });
-      const response = h.response({
-        status: 'success',
-        message: 'Album berhasil ditambahkan',
-        data: {
-          albumId,
-        },
-      });
-      response.code(201);
-      return response;
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      if (error instanceof InvariantError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      const response = h.response({
-        status: 'fail',
-        message: error.message,
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
+    const albumId = await this._service.addAlbum({ name, year });
+    const response = h.response({
+      status: 'success',
+      message: 'Album berhasil ditambahkan',
+      data: {
+        albumId,
+      },
+    });
+    response.code(201);
+    return response;
   }
 
-  async getAlbumsHandler(request, h) {
-    try {
-      const albums = await this._service.getAlbums();
-      return {
-        status: 'success',
-        data: {
-          albums,
-        },
-      };
-    } catch (error) {
-      const response = h.response({
-        status: 'fail',
-        message: error.message,
-      });
-      response.code(500);
-      return response;
-    }
+  async getAlbumsHandler() {
+    const albums = await this._service.getAlbums();
+    return {
+      status: 'success',
+      data: {
+        albums,
+      },
+    };
   }
 
-  async getAlbumByIdHandler(request, h) {
-    try {
-      const { id } = request.params;
-      const album = await this._service.getAlbumById(id);
-      return {
-        status: 'success',
-        data: {
-          album,
-        },
-      };
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      const response = h.response({
-        status: 'fail',
-        message: error.message,
-      });
-      response.code(500);
-      return response;
-    }
+  async getAlbumByIdHandler(request) {
+    const { id } = request.params;
+    const album = await this._service.getSongsByAlbumId(id);
+    return {
+      status: 'success',
+      data: {
+        album,
+      },
+    };
   }
 
-  async putAlbumByIdHandler(request, h) {
-    try {
-      this._validator.validateAlbumPayload(request.payload);
-      const { id } = request.params;
-      const { name, year } = request.payload;
-      await this._service.updateAlbumById(id, { name, year });
-      return {
-        status: 'success',
-        message: 'Album berhasil diperbarui',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      const response = h.response({
-        status: 'fail',
-        message: error.message,
-      });
-      response.code(500);
-      return response;
-    }
+  async putAlbumByIdHandler(request) {
+    this._validator.validateAlbumPayload(request.payload);
+    const { id } = request.params;
+    const { name, year } = request.payload;
+    await this._service.updateAlbumById(id, { name, year });
+    return {
+      status: 'success',
+      message: 'Album berhasil diperbarui',
+    };
   }
 
-  async deleteAlbumByIdHandler(request, h) {
-    try {
-      const { id } = request.params;
-      await this._service.deleteAlbumById(id);
-      return {
-        status: 'success',
-        message: 'Album berhasil didelete',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-      const response = h.response({
-        status: 'fail',
-        message: error.message,
-      });
-      console.error(error);
-      response.code(500);
-      return response;
-    }
+  async deleteAlbumByIdHandler(request) {
+    const { id } = request.params;
+    await this._service.deleteAlbumById(id);
+    return {
+      status: 'success',
+      message: 'Album berhasil didelete',
+    };
   }
 }
 
