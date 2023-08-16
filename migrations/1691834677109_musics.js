@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createTable('songs', {
     id: {
-      type: 'TEXT',
+      type: 'CHAR(21)',
       primaryKey: true,
     },
     title: {
@@ -39,7 +39,7 @@ exports.up = (pgm) => {
       (album_id)
     REFERENCES
       albums (id)
-    ON DELETE SET NULL
+    ON DELETE CASCADE
     `,
   );
 };
