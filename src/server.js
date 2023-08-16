@@ -14,7 +14,9 @@ const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
 
 // Users
+const users = require('./api/users');
 const UsersService = require('./services/postgres/UsersService');
+const UsersValidator = require('./validator/users');
 
 // Authentication
 const authentications = require('./api/authentications');
@@ -74,6 +76,13 @@ const init = async () => {
         options: {
           service: songsService,
           validator: SongsValidator,
+        },
+      },
+      {
+        plugin: users,
+        options: {
+          service: usersService,
+          validator: UsersValidator,
         },
       },
       {
