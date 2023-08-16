@@ -1,17 +1,35 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const ClientError = require('./exceptions/ClientError');
+
+// Songs
 const songs = require('./api/songs');
-const albums = require('./api/albums');
 const SongsService = require('./services/postgres/SongsService');
+const SongsValidator = require('./validator/songs');
+
+// Albums
+const albums = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
-const SongsValidator = require('./validator/songs');
-const ClientError = require('./exceptions/ClientError');
+
+// Users
+const users = require('./api/users');
+const UsersService = require('./services/postgres/UsersService');
+const UsersValidator = require('./validator/users');
+
+// Authentication
+const authentications = require('./api/authentications');
+const AuthenticationsService = require('./services/postgres/AuthenticationsService');
+const TokenManager = require('./tokenize/TokenManager');
+const AuthenticationsValidator = require('./validator/authentications');
 
 const init = async () => {
   const albumsService = new AlbumsService();
   const songsService = new SongsService();
+  const authenticationsService = new AuthenticationsService();
+  const usersService = new UsersService();
+
   const server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -45,20 +63,38 @@ const init = async () => {
     return h.continue;
   });
   await server.register(
-    [{
-      plugin: albums,
-      options: {
-        service: albumsService,
-        validator: AlbumsValidator,
+    [
+      {
+        plugin: albums,
+        options: {
+          service: albumsService,
+          validator: AlbumsValidator,
+        },
       },
-    },
-    {
-      plugin: songs,
-      options: {
-        service: songsService,
-        validator: SongsValidator,
+      {
+        plugin: songs,
+        options: {
+          service: songsService,
+          validator: SongsValidator,
+        },
       },
-    }],
+      {
+        plugin: users,
+        options: {
+          service: usersService,
+          validator: UsersValidator,
+        },
+      },
+      {
+        plugin: authentications,
+        options: {
+          authenticationsService,
+          usersService,
+          tokenManager: TokenManager,
+          validator: AuthenticationsValidator,
+        },
+      },
+    ],
   );
   await server.start();
   console.log(`Listening at ${server.info.uri}`);
