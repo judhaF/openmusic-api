@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createTable('collaborations', {
     id: {
-      type: 'CHAR(22)',
+      type: 'CHAR(23)',
       primaryKey: true,
     },
     playlist_id: {

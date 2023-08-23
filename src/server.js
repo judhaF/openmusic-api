@@ -9,7 +9,11 @@ const ClientError = require('./exceptions/ClientError');
 const playlist = require('./api/playlists');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
 const PlaylistValidator = require('./validator/playlists');
+
+// Collaborations
 const CollaborationsService = require('./services/postgres/CollaborationsService');
+const collaborations = require('./api/collaborations');
+const CollaborationValidator = require('./validator/collaborations');
 
 // Songs
 const songs = require('./api/songs');
@@ -37,7 +41,7 @@ const init = async () => {
   const songsService = new SongsService();
   const authenticationsService = new AuthenticationsService();
   const usersService = new UsersService();
-  const playlistService = new PlaylistsService();
+  const playlistsService = new PlaylistsService();
   const collaborationsService = new CollaborationsService();
 
   const server = Hapi.server({
@@ -63,21 +67,30 @@ const init = async () => {
       if (!response.isServer) {
         return h.continue;
       }
-      console.log(response.table);
-      if ((response.code === '23503') && response.table === 'playlist_songs') {
-        const newResponse = h.response({
-          status: 'fail',
-          message: 'Id Song/Playlist tidak ditemukan',
-        });
-        newResponse.code(404);
-        return newResponse;
+      if ((response.code === '23503')) {
+        if (response.table === 'playlist_songs') {
+          const newResponse = h.response({
+            status: 'fail',
+            message: 'Id Song/Playlist tidak ditemukan',
+          });
+          newResponse.code(404);
+          return newResponse;
+        }
+        if (response.table === 'collaborations') {
+          const newResponse = h.response({
+            status: 'fail',
+            message: 'Id User/Playlist tidak ditemukan',
+          });
+          newResponse.code(404);
+          return newResponse;
+        }
       }
       const newResponse = h.response({
         status: 'error',
         message: 'Terjadi kegagalan pada server',
       });
-      console.error(response);
       newResponse.code(500);
+      console.error(response);
       return newResponse;
     }
     return h.continue;
@@ -105,7 +118,6 @@ const init = async () => {
       },
     }),
   });
-
   // Registrasi Plugin Internal
   await server.register(
     [
@@ -124,9 +136,17 @@ const init = async () => {
         },
       },
       {
+        plugin: collaborations,
+        options: {
+          playlistsService,
+          collaborationsService,
+          validator: CollaborationValidator,
+        },
+      },
+      {
         plugin: playlist,
         options: {
-          playlistService,
+          playlistsService,
           collaborationsService,
           validator: PlaylistValidator,
         },

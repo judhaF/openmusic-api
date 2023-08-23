@@ -1,4 +1,4 @@
-const InvariantError = require('../../exceptions/InvariantError');
+const ClientError = require('../../exceptions/ClientError');
 const {
   PostCollaborationPayloadSchema,
   DeleteCollaborationPayloadSchema,
@@ -8,16 +8,15 @@ const CollaborationValidator = {
   validatePostCollaborationPayload: (payload) => {
     const validationResult = PostCollaborationPayloadSchema.validate(payload);
     if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+      throw new ClientError(validationResult.error.message);
     }
   },
-  validateDeleteAuthenticationPayload: (payload) => {
+  validateDeleteCollaborationPayload: (payload) => {
     const validationResult = DeleteCollaborationPayloadSchema.validate(payload);
     if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+      throw new ClientError(validationResult.error.message);
     }
   },
-
 };
 
 module.exports = CollaborationValidator;

@@ -24,7 +24,7 @@ class PlaylistsService extends BaseService {
     return playlistId.rows[0].id;
   }
 
-  async getPlaylists() {
+  async getPlaylists(id) {
     const result = await this._pool.query(
       `
       SELECT
@@ -33,13 +33,17 @@ class PlaylistsService extends BaseService {
         ${this._table} as p
       LEFT JOIN users as u
       ON p.owner_id=u.id
+      LEFT JOIN collaborations as c
+      ON c.playlist_id=p.id
+      WHERE
+        p.owner_id=$1 OR c.user_id=$1
       `,
+      [id],
     );
     return result.rows;
   }
 
-  async addSongToPlaylist({ playlistId, songId, ownerId }) {
-    await this.verifyPlaylistOwner({ playlistId, ownerId });
+  async addSongToPlaylist({ playlistId, songId }) {
     const id = `ps-${nanoid(16)}`;
     const query = {
       text: 'INSERT INTO playlist_songs VALUES ($1, $2, $3) RETURNING id',
