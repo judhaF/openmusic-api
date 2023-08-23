@@ -26,7 +26,7 @@ class CollaborationsService extends BaseService {
     return result.rows[0].id;
   }
 
-  async deleteCollaboration(playlistId, userId) {
+  async deleteCollaboration({ playlistId, userId }) {
     const query = {
       text: `DELETE FROM ${this._table} WHERE playlist_id=$1 AND user_id=$2 RETURNING id`,
       values: [playlistId, userId],

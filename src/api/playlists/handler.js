@@ -91,8 +91,9 @@ class PlaylistsHandler {
     try {
       await this._service.verifyPlaylistOwner({ playlistId, userId });
     } catch (error) {
-      continue
+      console.log('Not owner');
     }
+    await this._collabService.verifyCollaborator({ playlistId, userId });
   }
 }
 
