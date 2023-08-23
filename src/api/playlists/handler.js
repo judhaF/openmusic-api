@@ -1,8 +1,9 @@
 const autoBind = require('auto-bind');
 
 class PlaylistsHandler {
-  constructor(service, validator) {
-    this._service = service;
+  constructor(playlistsService, collaborationsService, validator) {
+    this._service = playlistsService;
+    this._collabService = collaborationsService;
     this._validator = validator;
 
     autoBind(this);
@@ -84,6 +85,14 @@ class PlaylistsHandler {
       status: 'success',
       message: 'Playlist berhasil didelete',
     };
+  }
+
+  async verifyPlaylistAccess({ playlistId, userId }) {
+    try {
+      await this._service.verifyPlaylistOwner({ playlistId, userId });
+    } catch (error) {
+      continue
+    }
   }
 }
 
