@@ -2,6 +2,7 @@ const { nanoid } = require('nanoid');
 const BaseService = require('./BaseService');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
+const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService extends BaseService {
   constructor() {
@@ -27,23 +28,25 @@ class PlaylistsService extends BaseService {
     const result = await this._pool.query(
       `
       SELECT
-        id, name, username
+        p.id as id, p.name as name, u.username as username
       FROM
-        ${this._table} 
-      LEFT JOIN users
-      ON ${this._table}.owner_id=users.id
+        ${this._table} as p
+      LEFT JOIN users as u
+      ON p.owner_id=u.id
       `,
     );
     return result.rows;
   }
 
-  async addSongToPlaylist({ playlistId, songId }) {
+  async addSongToPlaylist({ playlistId, songId, ownerId }) {
+    await this.verifyPlaylistOwner({ playlistId, ownerId });
     const id = `ps-${nanoid(16)}`;
     const query = {
       text: 'INSERT INTO playlist_songs VALUES ($1, $2, $3) RETURNING id',
       values: [id, playlistId, songId],
     };
     const result = await this._pool.query(query);
+    console.log(result.rows);
     if (!result.rows[0].id) {
       throw new InvariantError('Gagal insert song ke playlist');
     }
@@ -76,7 +79,7 @@ class PlaylistsService extends BaseService {
         users u
       ON p.owner_id=u.id
       WHERE
-        p.id='$1'
+        p.id=$1
       `,
       values: [id],
     };
@@ -85,6 +88,34 @@ class PlaylistsService extends BaseService {
       throw new NotFoundError('Gagal mengambil playlist, id tidak ditemukan');
     }
     return result.rows[0];
+  }
+
+  async deleteSongById({ playlistId, songId }) {
+    const query = {
+      text: 'DELETE FROM playlist_songs WHERE playlist_id=$1 AND song_id=$2 RETURNING id',
+      values: [playlistId, songId],
+    };
+    const result = await this._pool.query(query);
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal menghapus, id tidak ditemukan');
+    }
+  }
+
+  async verifyPlaylistOwner({ playlistId, ownerId }) {
+    const query = {
+      text: `SELECT id, owner_id FROM ${this._table} WHERE id=$1`,
+      values: [playlistId],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Playlist tidak ditemukan');
+    }
+    console.log(result.rows);
+    console.log(ownerId);
+    if (result.rows[0].owner_id !== ownerId) {
+      throw new AuthorizationError('Tidak berhak mengakses');
+    }
   }
 }
 

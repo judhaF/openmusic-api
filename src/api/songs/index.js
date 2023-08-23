@@ -5,7 +5,7 @@ module.exports = {
   name: 'songs',
   version: '1.0.0',
   register: async (server, { service, validator }) => {
-    const notesHandler = new SongsHandler(service, validator);
-    server.route(routes(notesHandler));
+    const songsHandler = new SongsHandler(service, validator);
+    server.route(routes(songsHandler));
   },
 };
