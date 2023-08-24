@@ -47,6 +47,7 @@ class CollaborationsService extends BaseService {
     if (!result.rows.length) {
       throw new AuthorizationError('Tidak masuk kedalam collaborasi');
     }
+    return true;
   }
 }
 

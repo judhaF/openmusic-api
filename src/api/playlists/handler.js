@@ -1,4 +1,5 @@
 const autoBind = require('auto-bind');
+const NotFoundError = require('../../exceptions/NotFoundError');
 
 class PlaylistsHandler {
   constructor(playlistsService, collaborationsService, validator) {
@@ -55,7 +56,7 @@ class PlaylistsHandler {
     const { id: playlistId } = request.params;
     const { id: userId } = request.auth.credentials;
     await this.verifyPlaylistAccess({ playlistId, userId });
-    await this._service.addSongToPlaylist({ playlistId, songId });
+    await this._service.addSongToPlaylist({ playlistId, songId, userId });
     const response = h.response({
       status: 'success',
       message: `Song berhasil ditambahkan ke playlist dengan id ${playlistId}`,
@@ -67,8 +68,8 @@ class PlaylistsHandler {
   async getSongByPlaylistHandler(request) {
     const { id: playlistId } = request.params;
     const { id: userId } = request.auth.credentials;
-    await this.verifyPlaylistAccess({ playlistId, userId });
     const playlist = await this._service.getSongsByPlaylist(playlistId);
+    await this.verifyPlaylistAccess({ playlistId, userId });
     return {
       status: 'success',
       data: {
@@ -81,22 +82,35 @@ class PlaylistsHandler {
     this._validator.validateSongPlaylistPayload(request.payload);
     const { id: playlistId } = request.params;
     const { id: userId } = request.auth.credentials;
-    await this.verifyPlaylistAccess({ playlistId, userId });
     const { songId } = request.payload;
-    await this._service.deleteSongById({ playlistId, songId });
+    await this.verifyPlaylistAccess({ playlistId, userId });
+    await this._service.deleteSongById({ playlistId, songId, userId });
     return {
       status: 'success',
-      message: 'Playlist berhasil didelete',
+      message: 'Song berhasil didelete dari playlist',
     };
   }
 
   async verifyPlaylistAccess({ playlistId, userId }) {
     try {
-      await this._service.verifyPlaylistOwner({ playlistId, userId });
+      await this._service.verifyPlaylistOwner({ playlistId, ownerId: userId });
     } catch (error) {
-      console.log('Not owner');
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      await this._collabService.verifyCollaborator({ playlistId, userId });
     }
-    await this._collabService.verifyCollaborator({ playlistId, userId });
+  }
+
+  async getPlaylistActivitiesHandler(request) {
+    const { id: playlistId } = request.params;
+    const { id: userId } = request.auth.credentials;
+    await this.verifyPlaylistAccess({ playlistId, userId });
+    const result = await this._service.getPlaylistActivities({ playlistId });
+    return {
+      status: 'success',
+      data: result,
+    };
   }
 }
 

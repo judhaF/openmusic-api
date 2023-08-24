@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createTable('playlist_song_activities', {
     id: {
-      type: 'CHAR(19)',
+      type: 'CHAR(20)',
       primaryKey: true,
     },
     playlist_id: {
@@ -22,6 +22,7 @@ exports.up = (pgm) => {
     },
     time: {
       type: 'TIMESTAMP',
+      default: pgm.func('now()'),
     },
   });
   pgm.addConstraint(
@@ -32,7 +33,7 @@ exports.up = (pgm) => {
       (user_id)
     REFERENCES
       users (id)
-    ON DELETE CASCADE
+    ON DELETE SET NULL
     `,
   );
   pgm.addConstraint(
