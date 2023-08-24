@@ -22,5 +22,5 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable('user', { ifExists: true });
+  pgm.dropTable('users', { ifExists: true });
 };

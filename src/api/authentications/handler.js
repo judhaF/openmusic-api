@@ -6,6 +6,7 @@ class AuthenticationsHandler {
     this._usersService = usersService;
     this._tokenManager = tokenManager;
     this._validator = validator;
+
     autoBind(this);
   }
 

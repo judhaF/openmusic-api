@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createTable('collaborations', {
     id: {
-      type: 'CHAR(22)',
+      type: 'CHAR(23)',
       primaryKey: true,
     },
     playlist_id: {
@@ -15,9 +15,41 @@ exports.up = (pgm) => {
       type: 'CHAR(21)',
     },
   });
+  pgm.addConstraint(
+    'collaborations',
+    'fk_collab_playlist_id',
+    `
+    FOREIGN KEY
+      (playlist_id)
+    REFERENCES
+      playlists (id)
+    ON DELETE CASCADE
+    `,
+  );
+  pgm.addConstraint(
+    'collaborations',
+    'fk_collab_user_id',
+    `
+    FOREIGN KEY
+      (user_id)
+    REFERENCES
+      users (id)
+    ON DELETE CASCADE
+    `,
+  );
 };
 
 exports.down = (pgm) => {
+  pgm.dropConstraint(
+    'collaborations',
+    'fk_collab_playlist_id',
+    { ifExists: true },
+  );
+  pgm.dropConstraint(
+    'collaborations',
+    'fk_collab_user_id',
+    { ifExists: true },
+  );
   pgm.dropTable('collaborations', {
     ifExists: true,
   });

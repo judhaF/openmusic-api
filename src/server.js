@@ -1,7 +1,19 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
+
 const ClientError = require('./exceptions/ClientError');
+
+// Playlists
+const playlist = require('./api/playlists');
+const PlaylistsService = require('./services/postgres/PlaylistsService');
+const PlaylistValidator = require('./validator/playlists');
+
+// Collaborations
+const CollaborationsService = require('./services/postgres/CollaborationsService');
+const collaborations = require('./api/collaborations');
+const CollaborationValidator = require('./validator/collaborations');
 
 // Songs
 const songs = require('./api/songs');
@@ -29,6 +41,8 @@ const init = async () => {
   const songsService = new SongsService();
   const authenticationsService = new AuthenticationsService();
   const usersService = new UsersService();
+  const playlistsService = new PlaylistsService();
+  const collaborationsService = new CollaborationsService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -53,15 +67,58 @@ const init = async () => {
       if (!response.isServer) {
         return h.continue;
       }
+      if ((response.code === '23503')) {
+        if (response.table === 'playlist_songs') {
+          const newResponse = h.response({
+            status: 'fail',
+            message: 'Id Song/Playlist tidak ditemukan',
+          });
+          newResponse.code(404);
+          return newResponse;
+        }
+        if (response.table === 'collaborations') {
+          const newResponse = h.response({
+            status: 'fail',
+            message: 'Id User/Playlist tidak ditemukan',
+          });
+          newResponse.code(404);
+          return newResponse;
+        }
+      }
       const newResponse = h.response({
         status: 'error',
         message: 'Terjadi kegagalan pada server',
       });
       newResponse.code(500);
+      console.error(response);
       return newResponse;
     }
     return h.continue;
   });
+  // Registrasi Plugin Ekternal
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  // Strategi Autentikasi
+  server.auth.strategy('openmusic_jwt', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credentials: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
+  });
+  // Registrasi Plugin Internal
   await server.register(
     [
       {
@@ -76,6 +133,22 @@ const init = async () => {
         options: {
           service: songsService,
           validator: SongsValidator,
+        },
+      },
+      {
+        plugin: collaborations,
+        options: {
+          playlistsService,
+          collaborationsService,
+          validator: CollaborationValidator,
+        },
+      },
+      {
+        plugin: playlist,
+        options: {
+          playlistsService,
+          collaborationsService,
+          validator: PlaylistValidator,
         },
       },
       {
