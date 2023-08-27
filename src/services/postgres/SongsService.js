@@ -39,7 +39,7 @@ class SongsService extends BaseService {
 
   async getSongs() {
     const result = await this._pool.query(`SELECT id, title, performer FROM ${this._table}`);
-    return result.rows.map(mapSongsModel);
+    return result.rows;
   }
 
   async getSongById(id) {

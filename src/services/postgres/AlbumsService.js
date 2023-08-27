@@ -87,8 +87,8 @@ class AlbumsService extends BaseService {
             )
           FROM
             songs s
-              WHERE
-                  s.album_id=a.id
+          WHERE
+            s.album_id=a.id
         ) as songs
       FROM
         ${this._table} a
