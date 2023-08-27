@@ -1,5 +1,5 @@
 const autoBind = require('auto-bind');
-const NotFoundError = require('../../exceptions/NotFoundError');
+const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsHandler {
   constructor(playlistsService, collaborationsService, validator) {
@@ -95,10 +95,11 @@ class PlaylistsHandler {
     try {
       await this._service.verifyPlaylistOwner({ playlistId, ownerId: userId });
     } catch (error) {
-      if (error instanceof NotFoundError) {
+      if (error instanceof AuthorizationError) {
+        await this._collabService.verifyCollaborator({ playlistId, userId });
+      } else {
         throw error;
       }
-      await this._collabService.verifyCollaborator({ playlistId, userId });
     }
   }
 
