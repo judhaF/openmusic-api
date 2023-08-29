@@ -40,19 +40,20 @@ class AlbumsService extends BaseService {
     return result.rows[0];
   }
 
-  async updateAlbumById(id, { name, year }) {
+  async updateAlbumById(id, { name, year, cover }) {
     const query = {
       text: `
       UPDATE
         ${this._table}
       SET
         name=$2,
-        year=$3
+        year=$3,
+        cover=$4
       WHERE
         id=$1
       RETURNING
         id`,
-      values: [id, name, year],
+      values: [id, name, year, cover],
     };
     const result = await this._pool.query(query);
     if (!result.rows.length) {
@@ -78,6 +79,7 @@ class AlbumsService extends BaseService {
         a.id as id,
         a.name as name,
         a.year as year,
+        a.cover as "coverUrl",
           array(
           SELECT
             json_build_object(

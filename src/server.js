@@ -1,8 +1,9 @@
 require('dotenv').config();
 
+const path = require('path');
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
-
+const Inert = require('@hapi/inert');
 const ClientError = require('./exceptions/ClientError');
 
 // Playlists
@@ -41,6 +42,9 @@ const _exports = require('./api/exports');
 const ProducerService = require('./services/rabbitmq/ProducerService');
 const ExportsValidator = require('./validator/exports');
 
+// Storage
+const StorageService = require('./services/storage/StorageService');
+
 const init = async () => {
   const albumsService = new AlbumsService();
   const songsService = new SongsService();
@@ -48,6 +52,7 @@ const init = async () => {
   const usersService = new UsersService();
   const playlistsService = new PlaylistsService();
   const collaborationsService = new CollaborationsService();
+  const albumsStorageService = new StorageService(path.resolve(__dirname, 'public/images/AlbumCover'));
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -105,6 +110,9 @@ const init = async () => {
     {
       plugin: Jwt,
     },
+    {
+      plugin: Inert,
+    },
   ]);
 
   // Strategi Autentikasi
@@ -130,6 +138,7 @@ const init = async () => {
         plugin: albums,
         options: {
           service: albumsService,
+          storageService: albumsStorageService,
           validator: AlbumsValidator,
         },
       },
